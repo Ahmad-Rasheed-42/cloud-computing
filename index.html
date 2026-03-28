@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniEvent - Official University Events</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+        }
+        .events-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .event-card {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .event-card:hover {
+            transform: translateY(-5px);
+        }
+        .event-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: #e9ecef;
+        }
+        .event-details {
+            padding: 20px;
+        }
+        .event-type {
+            font-size: 0.8em;
+            text-transform: uppercase;
+            color: #e74c3c;
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .event-title {
+            font-size: 1.2em;
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .event-date {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .loading {
+            text-align: center;
+            font-size: 1.2em;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>UniEvent Portal</h1>
+        <p>Discover and register for upcoming university activities.</p>
+    </header>
+
+    <div id="loading" class="loading">Loading official events...</div>
+    <div id="events-grid" class="events-container"></div>
+
+    <script>
+        // REPLACE this URL with the actual public URL of your JSON file in S3
+        const S3_JSON_URL = 'https://unievent-media-storage.s3.amazonaws.com/processed_data/university_events.json';
+
+        async function loadEvents() {
+            try {
+                const response = await fetch(S3_JSON_URL);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const events = await response.json();
+                displayEvents(events);
+            } catch (error) {
+                console.error('Error fetching events:', error);
+                document.getElementById('loading').innerText = 'Failed to load events. Please try again later.';
+            }
+        }
+
+        function displayEvents(events) {
+            const grid = document.getElementById('events-grid');
+            const loading = document.getElementById('loading');
+            
+            // Remove loading text
+            loading.style.display = 'none';
+
+            // Loop through each event and create a card
+            events.forEach(event => {
+                const card = document.createElement('div');
+                card.className = 'event-card';
+
+                // Use a placeholder if the poster URL is missing
+                const imageUrl = event.poster_url ? event.poster_url : 'https://via.placeholder.com/400x200?text=No+Image+Available';
+
+                // Format the date nicely
+                const formattedDate = new Date(event.date).toLocaleDateString('en-US', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                });
+
+                card.innerHTML = `
+                    <img src="${imageUrl}" alt="${event.title}" class="event-image">
+                    <div class="event-details">
+                        <span class="event-type">${event.type}</span>
+                        <h2 class="event-title">${event.title}</h2>
+                        <p class="event-date">📅 ${formattedDate}</p>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // Trigger the fetch when the page loads
+        window.onload = loadEvents;
+    </script>
+
+</body>
+</html>
